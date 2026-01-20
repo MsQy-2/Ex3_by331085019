@@ -1,0 +1,9 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="Ex3_by331085019:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/Ex3_by331085019_jar</output-path>
+    <root id="archive" name="Ex3_by331085019.jar">
+      <element id="module-output" name="Ex3_by331085019" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/Ex3_v09e.jar-out.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>

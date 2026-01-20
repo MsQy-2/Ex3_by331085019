@@ -31,6 +31,7 @@ public class Ex3Algo implements PacManAlgo {
     private GhostCL[] ghosts;
 
 
+
     private ArrayList<Pixel2D> safetyMap;
 
 
@@ -80,37 +81,26 @@ public class Ex3Algo implements PacManAlgo {
                     String pos = game.getPos(code).toString();
                     System.out.println("Pacman coordinate: " + pos);
                     this.pacPosition = StringToCord(pos);
-                    SetPoints(board);
+                    SetPoints();
                     this.points2 = new ArrayList<>(points);
+
                 }
 
             }
+            this.board1=new Map(game.getGame(0));
             GhostCL[] ghosts = game.getGhosts(0);
             this.ghosts = ghosts;
+            this.board1.setCyclic(true);
             mergeSortPoints(this.points);
-            mergeSortPoints2(this.points2);
-            if (pathToP == null) {
-                SetPath(points);
-            }
-            if (pathToP.size() == 0) {
-                SetPath(points);
-            }
-            if (DFCG(pacPosition) < 6) {
-                pathToP.clear();
-                SetPath(this.points2);
-            }
+            if(DSFG(pacPosition) <=2){mergeSortPoints2(this.points2);}
+            SetPath(this.points);
             _count++;
             if (pathToP.peek() == pacPosition) {
                 pathToP.poll();
             }
             int dir = MoveTo(pathToP.poll());
             MovePoint(this.pacPosition, dir);
-            if (this.points.contains(this.pacPosition)) {
-                this.points.remove(this.pacPosition);
-            }
-            System.out.println(pacPosition);
-            System.out.println(game.getPos(0));
-            printGhosts(ghosts);
+            if (this.points.contains(this.pacPosition)) {this.points.remove(this.pacPosition);}
             return dir;
         }
         return 0;
@@ -118,11 +108,11 @@ public class Ex3Algo implements PacManAlgo {
 
     }
 
-    private void SetPoints(int[][] board) {
+    private void SetPoints() {
         ArrayList<Pixel2D> points1 = new ArrayList<Pixel2D>();
-        for (int i = 0; i < board.length; i++) {
-            for (int j = 0; j < board[0].length; j++) {
-                if (board[i][j] == this.pink || board[i][j] == this.green) {
+        for (int i = 0; i < board1.getHeight(); i++) {
+            for (int j = 0; j < board1.getWidth(); j++) {
+                if (board1.getPixel(j,i) == this.pink || board1.getPixel(j,i) == this.green) {
                     points1.add(new Index2D(j, i));
                 }
             }
@@ -206,11 +196,7 @@ public class Ex3Algo implements PacManAlgo {
     }
 
     private int distance2Dcy(Pixel2D c, Pixel2D t) {
-        Map board2 = new Map(board1.getMap());
-        for (int x = 0; x < ghosts.length; x++) {
-            board2.setPixel(StringToCord(ghosts[x].getPos(0)), blue);
-        }
-        Pixel2D[] path = board2.shortestPath(c, t, blue);
+        Pixel2D[] path = board1.shortestPath(c, t, blue);
         if (path == null) return 1000;
         return path.length;
     }
@@ -250,7 +236,7 @@ public class Ex3Algo implements PacManAlgo {
     }
 
     private static void MovePoint(Pixel2D t, int direc) {
-        if (direc == 2) {
+        if (direc == 4) {
             if (t.getY() + 1 > 22) {
                 t.setY(0);
             } else {
@@ -260,7 +246,7 @@ public class Ex3Algo implements PacManAlgo {
         if (direc == 3) {
             t.setX(t.getX() - 1);
         }
-        if (direc == 4) {
+        if (direc == 2) {
             if (t.getY() - 1 < 0) {
                 t.setY(22);
             } else {
@@ -287,10 +273,10 @@ public class Ex3Algo implements PacManAlgo {
             return 3;
         }
         if (Dy == -1 || Dy == 22) {
-            return 2;
+            return 4;
         }
         if (Dy == 1 || Dy == -22) {
-            return 4;
+            return 2;
         }
         return 0;
 
@@ -299,36 +285,52 @@ public class Ex3Algo implements PacManAlgo {
     private void SetPath(ArrayList<Pixel2D> arr) {
         int j = 0;
         Pixel2D[] path2 =board1.shortestPath(pacPosition, arr.get(j), blue);
-        while (path2 == null) {path2 =board1.shortestPath(pacPosition, arr.get(j++), blue);}
+        while ((path2 == null || CheckArray(path2))&& j < arr.size())
+        {
+            path2 =board1.shortestPath(pacPosition, arr.get(j++), blue);
+        }
+        if (j == arr.size())
+        {
+            int k=0;
+            while (k < points2.size() &&(path2==null || CheckArray(path2) ))
+            {
+                if(points2.get(k)==pacPosition){k++;}
+                path2 =board1.shortestPath(pacPosition, points2.get(k++), blue);
+            }
+
+        }
         Queue<Pixel2D> q = new LinkedList<>();
+
         for (int i = 0; i < path2.length; i++) {
             q.add(path2[i]);
         }
         this.pathToP = q;
     }
 
-    private double DFCG(Pixel2D point) {
-
-        double firtDist = point.distance2D(StringToCord(ghosts[0].getPos(0)));
-        if (ghosts[0].getStatus() == 0) {
-            firtDist = 1000;
-        }
-        for (int i = 1; i < ghosts.length; i++) {
-            if (ghosts[i].getStatus() != 0) {
-                firtDist = Math.min(firtDist, point.distance2D(StringToCord(ghosts[i].getPos(0))));
-            }
-        }
-        return firtDist;
+    private int DisG(Pixel2D point,GhostCL g)
+    {int dis;
+        dis=distance2Dcy(point, StringToCord(g.getPos(0)));
+        return dis;
     }
 
-    private double DSFG(Pixel2D point) {
-        double score = 0;
-
-        for (int i = 0; i < ghosts.length; i++) {
-            if (ghosts[i].getStatus() != 0) {
-                score += point.distance2D(StringToCord(ghosts[i].getPos(0)));
-            }
+    private int DSFG(Pixel2D point) {
+        if(ghosts[0].remainTimeAsEatable(0)>0){return 1000;}
+        if(ghosts[0].getStatus()==0){return 1000;}
+        int score = 0,dist=DisG(point,ghosts[0]);
+        for (int i = 1; i < ghosts.length; i++)
+        {
+            dist=Math.min(dist,DisG(point,ghosts[i]));
         }
+        score+=dist;
+
         return score;
     }
+
+    private boolean CheckArray(Pixel2D[] array)
+    {
+        for (int i = 1; i < array.length; i++){if(DSFG(array[i]) <=2){return true;}}
+        return false;
+    }
+
+
 }
